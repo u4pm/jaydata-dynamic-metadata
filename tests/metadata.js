@@ -2,8 +2,10 @@
 
 var Edm = require('odata-v4-metadata').Edm
 var Metadata = require('../lib/metadata.js').Metadata
+var MetadataHandler = require('../lib/metadataHandler.js').MetadataHandler
 var expect = require('chai').expect
 var $data = require('jaydata/core')
+var fs = require('fs')
 require('reflect-metadata')
 
 var options = {
@@ -582,4 +584,24 @@ describe("without jaydata", () => {
         expect(typeof types.dts).to.equal("string")
         expect(types.dts).to.equal(require('./simpleDTSSchemaModel.json').src);
     });
+
+    it("typescript odata d.ts generation", () => {
+        var handler = new MetadataHandler($data, { generateTypes: false });
+        var types = handler.parse(fs.readFileSync('./tests/odata-metadata.xml', 'utf8'));
+        var expectedDts = fs.readFileSync('./tests/odata-context.d.ts.txt', 'utf8');
+
+        expect(types).to.have.length(1);
+        expect(typeof types.dts).to.equal("string");
+        expect(types.dts).to.equal(expectedDts);
+    });
+
+    it("typescript odata d.ts generation ingoreCoreInDts", () => {
+        var handler = new MetadataHandler($data, { generateTypes: false, ingoreCoreInDts: true });
+        var types = handler.parse(fs.readFileSync('./tests/odata-metadata.xml', 'utf8'));
+        var expectedDts = fs.readFileSync('./tests/odata-context-nocore.d.ts.txt', 'utf8');
+
+        expect(types).to.have.length(1);
+        expect(typeof types.dts).to.equal("string");
+        expect(types.dts).to.equal(expectedDts);
+    });    
 })

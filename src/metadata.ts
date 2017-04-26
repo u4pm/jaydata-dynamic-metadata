@@ -404,7 +404,7 @@ export class Metadata {
                     '//////                      OData  V4  TypeScript                              /////////\n' +
                     '//////////////////////////////////////////////////////////////////////////////////////*/\n\n';
 
-        types.dts += JayData.src + '\n\n';
+        if(!this.options.ingoreCoreInDts) types.dts += JayData.src + '\n\n';
         //types.dts += 'declare module Edm {\n' + Object.keys(dtsTypeMapping).map(t => '    type ' + t.split('.')[1] + ' = ' + dtsTypeMapping[t] + ';').join('\n') + '\n}\n\n';
 
         var self = this;
@@ -472,6 +472,7 @@ export class Metadata {
                 dtsm = dtsModules[d.namespace] = ['declare module ' + d.namespace + ' {', '}'];
             }
             var dtsPart = [];
+            var dtsEntitySetPart = [];
 
             var srcPart = '';
             if (d.baseType == '$data.Enum') {
@@ -508,11 +509,26 @@ export class Metadata {
                     '.extend("' + d.params[0] + '", ';
                 if (d.params[2] && Object.keys(d.params[2]).length > 0){
                     srcPart += '{\n' + Object.keys(d.params[2]).map(dp => '  ' + dp + ': ' + this._createPropertyDefString(d.params[2][dp])).join(',\n') + '\n}';
-                    if (d.baseType == this.options.contextType){
-                        Object.keys(d.params[2]).forEach(dp => dtsPart.push('        ' + dp + ': ' + this._typeToTS(d.params[2][dp].type, d.params[2][dp].elementType, d.params[2][dp]) + ';'));
-                    }else{
-                        Object.keys(d.params[2]).forEach(dp => dtsPart.push('        ' + dp + ': ' + this._typeToTS(d.params[2][dp].type, d.params[2][dp].elementType, d.params[2][dp]) + ';'));
-                    }
+
+                    Object.keys(d.params[2]).forEach(dp => {
+                        const definition = d.params[2][dp];
+
+                        if(definition.type == this.options.entitySetType && definition.actions) {
+                            dtsPart.push('        ' + dp + ': ' + dp + ';');
+                            dtsEntitySetPart.push('    export class ' + dp + ' extends $data.EntitySet<typeof ' + definition.elementType + ', ' + definition.elementType + '> {');
+                            Object.keys(definition.actions).forEach(a => dtsEntitySetPart.push('        ' + a + ': ' + this._typeToTS(definition.actions[a].type, definition.actions[a].elementType, definition.actions[a]) + ';'));
+                            dtsEntitySetPart.push('    }');
+                            dtsEntitySetPart.push('');
+                        }
+                        else {
+                            dtsPart.push('        ' + dp + ': ' + this._typeToTS(definition.type, definition.elementType, definition) + ';');
+                        }
+                    });
+                    // if (d.baseType == this.options.contextType){
+                    //     Object.keys(d.params[2]).forEach(dp => dtsPart.push('        ' + dp + ': ' + this._typeToTS(d.params[2][dp].type, d.params[2][dp].elementType, d.params[2][dp]) + ';'));
+                    // }else{
+                    //     Object.keys(d.params[2]).forEach(dp => dtsPart.push('        ' + dp + ': ' + this._typeToTS(d.params[2][dp].type, d.params[2][dp].elementType, d.params[2][dp]) + ';'));
+                    // }
                 }
                 else srcPart += 'null';
                 if (d.params[3] && Object.keys(d.params[3]).length > 0){
@@ -523,6 +539,9 @@ export class Metadata {
             types.src += srcPart;
 
             dtsPart.push('    }');
+
+            dtsPart.push(...dtsEntitySetPart);
+
             dtsm.splice(1, 0, dtsPart.join('\n'));
 
             if (this.options.debug) console.log('Type generated:', d.params[0]);
@@ -606,7 +625,10 @@ export class Metadata {
         }else if (type == this.options.collectionBaseType){
             return elementType + '[]';
         }else if (type == '$data.ServiceAction'){
-            return '{ (' + (definition.params.length > 0 ? definition.params.map(p => p.name + ': ' + this._typeToTS(p.type, p.elementType, p)).join(', ') : '') + '): Promise<void>; }';
+            var t = this._typeToTS(definition.returnType, definition.elementType, definition);
+            if (!t) t = 'Promise<void>';
+            else if (t.indexOf('$data.Queryable') < 0) t = 'Promise<' + t + '>';
+            return '{ (' + (definition.params.length > 0 ? definition.params.map(p => p.name + ': ' + this._typeToTS(p.type, p.elementType, p)).join(', ') : '') + '): ' + t + '; }';
         }else if (type == '$data.ServiceFunction'){
             var t = this._typeToTS(definition.returnType, definition.elementType, definition);
             if (t.indexOf('$data.Queryable') < 0) t = 'Promise<' + t + '>';

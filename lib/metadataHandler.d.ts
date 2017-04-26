@@ -1,4 +1,3 @@
-/// <reference types="es6-promise" />
 export declare var odatajs: any;
 export declare class MetadataHandler {
     options: any;
