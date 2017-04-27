@@ -404,7 +404,7 @@ export class Metadata {
                     '//////                      OData  V4  TypeScript                              /////////\n' +
                     '//////////////////////////////////////////////////////////////////////////////////////*/\n\n';
 
-        if(!this.options.ingoreCoreInDts) types.dts += JayData.src + '\n\n';
+        if(!this.options.ignoreCoreInDts) types.dts += JayData.src + '\n\n';
         //types.dts += 'declare module Edm {\n' + Object.keys(dtsTypeMapping).map(t => '    type ' + t.split('.')[1] + ' = ' + dtsTypeMapping[t] + ';').join('\n') + '\n}\n\n';
 
         var self = this;
@@ -524,11 +524,6 @@ export class Metadata {
                             dtsPart.push('        ' + dp + ': ' + this._typeToTS(definition.type, definition.elementType, definition) + ';');
                         }
                     });
-                    // if (d.baseType == this.options.contextType){
-                    //     Object.keys(d.params[2]).forEach(dp => dtsPart.push('        ' + dp + ': ' + this._typeToTS(d.params[2][dp].type, d.params[2][dp].elementType, d.params[2][dp]) + ';'));
-                    // }else{
-                    //     Object.keys(d.params[2]).forEach(dp => dtsPart.push('        ' + dp + ': ' + this._typeToTS(d.params[2][dp].type, d.params[2][dp].elementType, d.params[2][dp]) + ';'));
-                    // }
                 }
                 else srcPart += 'null';
                 if (d.params[3] && Object.keys(d.params[3]).length > 0){
