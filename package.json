@@ -24,7 +24,7 @@
     "@types/reflect-metadata": "0.0.5",
     "extend": "^3.0.0",
     "jaydata-error-handler": "^0.0.1",
-    "jaydata-odatajs": "^4.0.1",
+    "jaydata-odatajs": "git+https://github.com/u4pm/olingo-odata4-js",
     "jaydata-promise-handler": "^0.0.1",
     "odata-v4-metadata": "^0.1.3"
   },
